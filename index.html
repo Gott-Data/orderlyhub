@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>OrderlyHub — Place Your Order</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#111;--s1:#1a1a1a;--s2:#222;--br:#333;--t:#eee;--tm:#aaa;--td:#666;--ac:#f5a623;--ach:#e09500;--gn:#34d399;--gd:#059669}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;-webkit-text-size-adjust:100%}
+.wrap{max-width:480px;margin:0 auto;padding:16px}
+.bar{padding:14px 16px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg);z-index:9}
+.logo{font-size:18px;font-weight:700;color:var(--ac)}
+.logo span{color:var(--t);font-weight:400}
+.nav-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--br);background:0;color:var(--tm);font-size:13px;cursor:pointer}
+.nav-btn:hover{border-color:var(--ac);color:var(--ac)}
+h1{font-size:24px;font-weight:700;margin-bottom:6px;line-height:1.2}
+.sub{color:var(--tm);font-size:14px;line-height:1.5;margin-bottom:24px}
+.card{background:var(--s1);border:1px solid var(--br);border-radius:12px;padding:24px}
+.field{margin-bottom:18px}
+.lbl{display:block;font-size:11px;font-weight:600;color:var(--tm);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.lbl .opt{color:var(--td);font-weight:400;text-transform:none}
+input,textarea{width:100%;padding:12px;background:var(--bg);border:1px solid var(--br);border-radius:8px;color:var(--t);font-size:15px;font-family:inherit;outline:0;-webkit-appearance:none;appearance:none}
+input:focus,textarea:focus{border-color:var(--ac)}
+::placeholder{color:var(--td)}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;padding:14px;background:var(--ac);border:0;border-radius:8px;color:#111;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px}
+.btn:active{background:var(--ach)}
+.btn:disabled{opacity:.35}
+.wa-note{text-align:center;margin-top:14px;font-size:12px;color:var(--td)}
+.wa-note b{color:#25d366}
+
+/* Success & Tracking */
+.ok-card{background:var(--s1);border:1px solid var(--gd);border-radius:12px;padding:32px 24px;text-align:center}
+.ok-icon{width:52px;height:52px;background:var(--gd);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px;color:#fff}
+.ok-card h2{font-size:20px;margin-bottom:8px}
+.ok-card p{color:var(--tm);font-size:14px;margin-bottom:18px;line-height:1.5}
+.oid{font-size:16px;font-weight:700;color:var(--ac);background:var(--bg);display:inline-block;padding:8px 20px;border-radius:6px;margin-bottom:18px;letter-spacing:1px}
+.link-btn{display:inline-block;padding:10px 22px;border:1px solid var(--br);border-radius:6px;color:var(--tm);font-size:13px;text-decoration:none;cursor:pointer;background:0}
+.link-btn:hover{border-color:var(--ac);color:var(--ac)}
+
+/* Status Timeline */
+.tl{margin-bottom:18px}
+.tl-title{font-size:10px;font-weight:700;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.tl-step{display:flex;align-items:flex-start;gap:12px;padding-bottom:16px;position:relative}
+.tl-step:last-child{padding-bottom:0}
+.tl-rail{display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0}
+.tl-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--br);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.tl-dot.done{background:var(--gd);border-color:var(--gd);color:#fff}
+.tl-dot.now{background:var(--ac);border-color:var(--ac);color:#111}
+.tl-dot.wait{opacity:.35}
+.tl-line{width:2px;flex:1;min-height:12px;background:var(--br);margin-top:3px}
+.tl-line.done{background:var(--gd)}
+.tl-text{padding-top:4px}
+.tl-name{font-size:14px;font-weight:600;color:var(--td)}
+.tl-name.done{color:var(--gn)}
+.tl-name.now{color:var(--ac)}
+.tl-sub{font-size:11px;color:var(--td)}
+
+/* Details */
+.info{background:var(--s1);border:1px solid var(--br);border-radius:12px;padding:20px;margin-bottom:18px}
+.info-title{font-size:10px;font-weight:700;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--br);gap:12px}
+.info-row:last-child{border:0}
+.info-k{font-size:13px;color:var(--tm);flex-shrink:0}
+.info-v{font-size:14px;text-align:right;line-height:1.4;word-break:break-word}
+
+/* Chat */
+.chat{background:var(--s1);border:1px solid var(--br);border-radius:12px;overflow:hidden}
+.chat-head{padding:12px 16px;border-bottom:1px solid var(--br);font-size:13px;font-weight:600;color:var(--tm)}
+.chat-head b{color:#25d366}
+.chat-msgs{padding:14px;max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.cm{max-width:85%;padding:8px 12px;border-radius:10px;font-size:14px;line-height:1.4}
+.cm.c{align-self:flex-end;background:var(--ac);color:#111;border-bottom-right-radius:3px}
+.cm.t{align-self:flex-start;background:var(--s2);border-bottom-left-radius:3px}
+.cm.s{align-self:center;border:1px dashed var(--br);color:var(--td);font-size:12px;font-style:italic;background:0}
+.cm-time{font-size:10px;opacity:.5;margin-top:2px}
+.chat-bar{padding:10px;border-top:1px solid var(--br);display:flex;gap:8px}
+.chat-bar input{flex:1;padding:10px;font-size:14px}
+.chat-bar button{padding:10px 16px;background:var(--ac);border:0;border-radius:6px;color:#111;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer}
+
+/* Track Lookup */
+.lookup{text-align:center;padding-top:20px}
+.lookup h2{font-size:22px;margin-bottom:6px}
+.lookup p{color:var(--tm);font-size:14px;margin-bottom:22px}
+.lookup-row{display:flex;gap:8px;max-width:320px;margin:0 auto}
+.lookup-row input{text-align:center;font-weight:600;letter-spacing:1px}
+.lookup-row button{padding:12px 20px;white-space:nowrap}
+.err{color:#ef4444;font-size:13px;margin-top:12px}
+
+.hidden{display:none}
+.mt{margin-top:20px}
+
+@media(max-width:400px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="logo">orderly<span>hub</span></div>
+  <div>
+    <button class="nav-btn" onclick="showView('form')" id="nav-form">New Order</button>
+    <button class="nav-btn" onclick="showView('lookup')" id="nav-track">Track</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ORDER FORM -->
+  <div id="v-form">
+    <h1>Place Your Order</h1>
+    <p class="sub">We'll confirm via WhatsApp and keep you updated in real time.</p>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label class="lbl">Your Name</label>
+          <input id="f-name" placeholder="e.g. Aminata Kamara">
+        </div>
+        <div class="field">
+          <label class="lbl">WhatsApp Number</label>
+          <input id="f-phone" type="tel" placeholder="+232 76 123456">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">What would you like to order?</label>
+        <textarea id="f-items" placeholder="List the items you'd like..."></textarea>
+      </div>
+      <div class="field">
+        <label class="lbl">Delivery Address</label>
+        <input id="f-addr" placeholder="Full delivery address">
+      </div>
+      <div class="field">
+        <label class="lbl">Notes <span class="opt">(optional)</span></label>
+        <input id="f-notes" placeholder="Any special instructions?">
+      </div>
+      <button class="btn" id="f-submit" onclick="submitOrder()">Place Order</button>
+      <div class="wa-note"><b>●</b> You'll get live updates on WhatsApp</div>
+    </div>
+  </div>
+
+  <!-- ORDER SUCCESS + TRACKING -->
+  <div id="v-track" class="hidden">
+    <div id="track-content"></div>
+  </div>
+
+  <!-- TRACK LOOKUP -->
+  <div id="v-lookup" class="hidden">
+    <div class="lookup">
+      <h2>Track Your Order</h2>
+      <p>Enter your order ID to check the status.</p>
+      <div class="lookup-row">
+        <input id="l-input" placeholder="ORD-XXXX">
+        <button class="btn" onclick="lookupOrder()" style="width:auto">Track</button>
+      </div>
+      <div id="l-err" class="err hidden"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Config ──
+var API = window.location.origin;
+
+// ── State ──
+var currentOrder = null;
+var pollTimer = null;
+
+// ── Views ──
+function showView(name) {
+  ['form','track','lookup'].forEach(function(v) {
+    document.getElementById('v-' + v).classList.toggle('hidden', v !== name);
+  });
+  if (name !== 'track' && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// ── Submit Order ──
+function submitOrder() {
+  var name = document.getElementById('f-name').value.trim();
+  var phone = document.getElementById('f-phone').value.trim();
+  var items = document.getElementById('f-items').value.trim();
+  var addr = document.getElementById('f-addr').value.trim();
+  var notes = document.getElementById('f-notes').value.trim();
+
+  if (!name || !phone || !items || !addr) return;
+
+  var btn = document.getElementById('f-submit');
+  btn.disabled = true;
+  btn.textContent = 'Placing order...';
+
+  fetch(API + '/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customer: name, phone: phone, items: items, address: addr, notes: notes })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(order) {
+    currentOrder = order;
+    // Save order ID so they can find it later
+    try { localStorage.setItem('last_order', order.id); } catch(e) {}
+    showTracking(order, true);
+    showView('track');
+    startPolling(order.id);
+    // Reset form
+    ['f-name','f-phone','f-items','f-addr','f-notes'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+    alert('Could not place order. Please check your connection and try again.');
+  });
+}
+
+// ── Lookup ──
+function lookupOrder() {
+  var id = document.getElementById('l-input').value.trim().toUpperCase();
+  var errEl = document.getElementById('l-err');
+  if (!id) return;
+
+  fetch(API + '/api/orders?id=' + encodeURIComponent(id))
+  .then(function(r) {
+    if (!r.ok) throw new Error('not found');
+    return r.json();
+  })
+  .then(function(order) {
+    currentOrder = order;
+    errEl.classList.add('hidden');
+    showTracking(order, false);
+    showView('track');
+    startPolling(order.id);
+  })
+  .catch(function() {
+    errEl.textContent = 'Order not found. Check the ID and try again.';
+    errEl.classList.remove('hidden');
+  });
+}
+
+// ── Polling for updates ──
+function startPolling(orderId) {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(function() {
+    fetch(API + '/api/orders?id=' + encodeURIComponent(orderId))
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(order) {
+      if (order) {
+        currentOrder = order;
+        showTracking(order, false);
+      }
+    })
+    .catch(function() {});
+  }, 10000); // Poll every 10s to save bandwidth
+}
+
+// ── Render Tracking View ──
+var STEPS = ['new','confirmed','picked_up','in_transit','delivered'];
+var LABELS = {new:'Received',confirmed:'Confirmed',picked_up:'Picked Up',in_transit:'On the Way',delivered:'Delivered'};
+var EMOJI = {new:'📋',confirmed:'✅',picked_up:'📦',in_transit:'🚀',delivered:'🎉'};
+
+function showTracking(order, justPlaced) {
+  var ci = STEPS.indexOf(order.status);
+  var h = '';
+
+  // Success banner if just placed
+  if (justPlaced) {
+    h += '<div class="ok-card"><div class="ok-icon">✓</div>';
+    h += '<h2>Order Placed!</h2>';
+    h += '<p>You\'ll get a WhatsApp confirmation shortly with live updates.</p>';
+    h += '<div class="oid">' + esc(order.id) + '</div><br>';
+    h += '<span class="link-btn" onclick="showView(\'form\')">Place Another Order</span>';
+    h += '</div><div class="mt"></div>';
+  } else {
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">';
+    h += '<h1>' + esc(order.id) + '</h1>';
+    h += '<button class="nav-btn" onclick="showView(\'form\')">← Back</button></div>';
+  }
+
+  // Timeline
+  h += '<div class="info"><div class="tl-title">Order Status</div><div class="tl">';
+  for (var i = 0; i < STEPS.length; i++) {
+    var s = STEPS[i];
+    var done = i < ci, now = i === ci, wait = i > ci;
+    h += '<div class="tl-step"><div class="tl-rail">';
+    h += '<div class="tl-dot' + (done?' done':'') + (now?' now':'') + (wait?' wait':'') + '">';
+    h += done ? '✓' : EMOJI[s];
+    h += '</div>';
+    if (i < STEPS.length - 1) h += '<div class="tl-line' + (done?' done':'') + '"></div>';
+    h += '</div><div class="tl-text">';
+    h += '<div class="tl-name' + (done?' done':'') + (now?' now':'') + '">' + LABELS[s] + '</div>';
+    if (now) h += '<div class="tl-sub">Current step</div>';
+    h += '</div></div>';
+  }
+  h += '</div></div>';
+
+  // Details
+  h += '<div class="info"><div class="info-title">Order Details</div>';
+  h += infoRow('Items', order.items);
+  h += infoRow('Address', order.address);
+  if (order.notes) h += infoRow('Notes', order.notes);
+  h += infoRow('Placed', new Date(order.created_at).toLocaleString());
+  h += '</div>';
+
+  // Chat
+  var msgs = order.messages || [];
+  h += '<div class="chat"><div class="chat-head"><b>●</b> Chat with us</div>';
+  h += '<div class="chat-msgs" id="chat-msgs">';
+  for (var j = 0; j < msgs.length; j++) {
+    var m = msgs[j];
+    var cls = m.sender === 'customer' ? 'c' : m.sender === 'team' ? 't' : 's';
+    h += '<div class="cm ' + cls + '">' + esc(m.text);
+    h += '<div class="cm-time">' + fmtTime(m.created_at) + '</div></div>';
+  }
+  h += '</div>';
+  h += '<div class="chat-bar">';
+  h += '<input id="chat-input" placeholder="Type a message..." onkeydown="if(event.key===\'Enter\')sendChat()">';
+  h += '<button onclick="sendChat()">Send</button></div></div>';
+
+  document.getElementById('track-content').innerHTML = h;
+
+  // Scroll chat to bottom
+  var cm = document.getElementById('chat-msgs');
+  if (cm) cm.scrollTop = cm.scrollHeight;
+}
+
+function sendChat() {
+  var inp = document.getElementById('chat-input');
+  var text = inp.value.trim();
+  if (!text || !currentOrder) return;
+  inp.value = '';
+
+  fetch(API + '/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order_id: currentOrder.id, text: text, sender: 'customer' })
+  }).catch(function() {});
+
+  // Optimistic update
+  if (!currentOrder.messages) currentOrder.messages = [];
+  currentOrder.messages.push({ sender: 'customer', text: text, created_at: new Date().toISOString() });
+  showTracking(currentOrder, false);
+}
+
+// ── Helpers ──
+function esc(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function infoRow(k, v) {
+  return '<div class="info-row"><span class="info-k">' + k + '</span><span class="info-v">' + esc(v) + '</span></div>';
+}
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+  catch(e) { return ''; }
+}
+
+// ── Auto-detect returning user ──
+try {
+  var last = localStorage.getItem('last_order');
+  if (last) {
+    document.getElementById('l-input').value = last;
+  }
+} catch(e) {}
+
+// ── Handle Enter on lookup ──
+document.getElementById('l-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') lookupOrder();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+
+// ═══════════════════════════════════════════════════════
+// CONFIGURE THESE before deploying
+// ═══════════════════════════════════════════════════════
+const CONFIG = {
+  API_URL: "", // e.g. "https://orderlyhub.vercel.app" — leave empty for same-origin
+  ADMIN_KEY: "change-this-to-something-secret", // Must match ADMIN_KEY in your .env
+};
+
+const API = CONFIG.API_URL;
+const HEADERS = {
+  "Content-Type": "application/json",
+  "x-admin-key": CONFIG.ADMIN_KEY,
+};
+
+const STATUS_FLOW = ["new", "confirmed", "picked_up", "in_transit", "delivered"];
+const STATUS_LABELS = {
+  new: "New Order", confirmed: "Confirmed", picked_up: "Picked Up",
+  in_transit: "In Transit", delivered: "Delivered",
+};
+const STATUS_COLORS = {
+  new: "#E8590C", confirmed: "#D97706", picked_up: "#7C3AED",
+  in_transit: "#2563EB", delivered: "#059669",
+};
+
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0C0B09;--s1:#131110;--s2:#1C1916;--br:#272420;--t:#EBE7E0;--tm:#B0A99F;--mu:#7A7369;--dim:#4A453F;--ac:#F5A623;--ach:#E09500;--gn:#34D399;--gd:#059669}
+body,#root{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--t);height:100vh;overflow:hidden}
+.app{height:100vh;display:flex;flex-direction:column}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--br);background:var(--s1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.brand{font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--ac)}
+.brand span{color:var(--t);font-weight:400}
+.brand .tag{font-family:'DM Sans';font-size:10px;font-weight:600;color:var(--bg);background:var(--ac);padding:2px 8px;border-radius:4px;margin-left:10px;vertical-align:middle;text-transform:uppercase;letter-spacing:.5px}
+.meta{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--mu)}
+.live{width:8px;height:8px;border-radius:50%;background:var(--gn);animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+.stats{display:flex;border-bottom:1px solid var(--br);flex-shrink:0}
+.stat{flex:1;padding:16px 24px;border-right:1px solid var(--br);text-align:center}
+.stat:last-child{border-right:0}
+.sv{font-family:'Fraunces',serif;font-size:26px;font-weight:700}
+.sl{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.main{display:grid;grid-template-columns:360px 1fr;flex:1;min-height:0}
+.sb{border-right:1px solid var(--br);display:flex;flex-direction:column;background:var(--s1)}
+.sb-search{padding:14px;border-bottom:1px solid var(--br)}
+.si{width:100%;padding:9px 14px;background:var(--bg);border:1px solid var(--br);border-radius:8px;color:var(--t);font-family:inherit;font-size:14px;outline:0}
+.si:focus{border-color:var(--ac)}
+.si::placeholder{color:var(--dim)}
+.flt{display:flex;gap:5px;padding:10px 14px;border-bottom:1px solid var(--br);flex-wrap:wrap}
+.fb{padding:4px 11px;border-radius:16px;border:1px solid var(--br);background:0;color:var(--mu);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
+.fb:hover{border-color:var(--ac);color:var(--t)}
+.fb.on{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:600}
+.ol{flex:1;overflow-y:auto}
+.oi{padding:14px 16px;border-bottom:1px solid #1a1816;cursor:pointer;transition:background .12s}
+.oi:hover{background:var(--s2)}
+.oi.sel{background:var(--s2);border-left:3px solid var(--ac)}
+.oi-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.oi-id{font-weight:700;font-size:14px}
+.oi-time{font-size:12px;color:var(--dim)}
+.oi-name{font-size:14px;color:var(--tm);margin-bottom:4px}
+.oi-items{font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.badge{display:inline-block;padding:2px 10px;border-radius:16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.det{display:flex;flex-direction:column;min-height:0}
+.det-empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--dim);font-size:14px}
+.dh{padding:18px 24px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dh-t{font-family:'Fraunces',serif;font-size:22px;font-weight:700}
+.ab{padding:7px 14px;border-radius:7px;border:1px solid var(--br);background:0;color:var(--tm);font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s}
+.ab:hover{border-color:var(--ac);color:var(--ac)}
+.ab.pri{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:700}
+.ab.pri:hover{background:var(--ach)}
+.db{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0}
+.di{padding:22px 24px;border-right:1px solid var(--br);overflow-y:auto}
+.sec{margin-bottom:26px}
+.stit{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.fld{margin-bottom:12px}
+.fk{font-size:12px;color:var(--mu);margin-bottom:2px}
+.fv{font-size:14px;line-height:1.5}
+.sbar{display:flex;gap:4px;margin-top:6px}
+.ss{flex:1;height:6px;border-radius:3px;background:var(--br);transition:background .3s}
+.ss.done{background:var(--gd)}
+.ss.now{background:var(--ac)}
+.slbl{margin-top:8px;font-size:13px;font-weight:600}
+.ch{display:flex;flex-direction:column;background:var(--s1);min-height:0}
+.ch-h{padding:12px 18px;border-bottom:1px solid var(--br);font-size:13px;font-weight:600;color:var(--mu);flex-shrink:0}
+.ch-h b{color:#25d366}
+.ch-m{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.cm{max-width:82%;padding:9px 13px;border-radius:11px;font-size:14px;line-height:1.5}
+.cm.c{align-self:flex-start;background:var(--s2);border-bottom-left-radius:3px}
+.cm.t{align-self:flex-end;background:var(--ac);color:var(--bg);border-bottom-right-radius:3px}
+.cm.s{align-self:center;border:1px dashed var(--br);color:var(--dim);font-size:12px;font-style:italic;background:0}
+.cm-t{font-size:10px;opacity:.55;margin-top:2px}
+.ch-b{padding:12px;border-top:1px solid var(--br);display:flex;gap:8px;flex-shrink:0}
+.ci{flex:1;padding:9px 13px;background:var(--bg);border:1px solid var(--br);border-radius:7px;color:var(--t);font-family:inherit;font-size:14px;outline:0}
+.ci:focus{border-color:var(--ac)}
+.ci::placeholder{color:var(--dim)}
+.cs{padding:9px 16px;background:var(--ac);border:0;border-radius:7px;color:var(--bg);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.cs:hover{background:var(--ach)}
+.empty{padding:40px;text-align:center;color:var(--dim);font-size:14px}
+.loading{padding:40px;text-align:center;color:var(--mu);font-size:14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}.db{grid-template-columns:1fr}.stats{flex-wrap:wrap}.stat{min-width:50%}}
+`;
+
+export default function AdminDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [chatMsg, setChatMsg] = useState("");
+  const [loading, setLoading] = useState(true);
+  const chatRef = useRef(null);
+
+  // ── Fetch orders ──
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/orders`, { headers: HEADERS });
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data);
+      }
+    } catch (e) {
+      console.error("Fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+    // Poll every 5s for updates (swap with Supabase Realtime for production)
+    const interval = setInterval(fetchOrders, 5000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
+
+  const order = orders.find((o) => o.id === selected);
+
+  const filtered = orders.filter((o) => {
+    if (filter !== "all" && o.status !== filter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return o.customer.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || o.items.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const stats = {
+    total: orders.length,
+    new: orders.filter((o) => o.status === "new").length,
+    active: orders.filter((o) => ["confirmed", "picked_up", "in_transit"].includes(o.status)).length,
+    delivered: orders.filter((o) => o.status === "delivered").length,
+  };
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [order?.messages?.length]);
+
+  const advanceStatus = async () => {
+    if (!order) return;
+    const idx = STATUS_FLOW.indexOf(order.status);
+    if (idx >= STATUS_FLOW.length - 1) return;
+    const next = STATUS_FLOW[idx + 1];
+
+    // Optimistic update
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id !== order.id ? o : { ...o, status: next }
+      )
+    );
+
+    await fetch(`${API}/api/orders`, {
+      method: "PATCH",
+      headers: HEADERS,
+      body: JSON.stringify({ id: order.id, status: next }),
+    });
+
+    fetchOrders(); // Refresh to get system message
+  };
+
+  const sendMsg = async () => {
+    if (!chatMsg.trim() || !order) return;
+    const text = chatMsg.trim();
+    setChatMsg("");
+
+    // Optimistic update
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id !== order.id
+          ? o
+          : {
+              ...o,
+              messages: [
+                ...(o.messages || []),
+                { sender: "team", text, created_at: new Date().toISOString() },
+              ],
+            }
+      )
+    );
+
+    await fetch(`${API}/api/messages`, {
+      method: "POST",
+      headers: HEADERS,
+      body: JSON.stringify({ order_id: order.id, text, sender: "team" }),
+    });
+  };
+
+  const ago = (iso) => {
+    const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    return m < 60 ? `${m}m ago` : `${Math.floor(m / 60)}h ago`;
+  };
+
+  const fmtTime = (iso) => {
+    try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+    catch { return ""; }
+  };
+
+  const currentIdx = order ? STATUS_FLOW.indexOf(order.status) : -1;
+  const nextStatus = order && currentIdx < STATUS_FLOW.length - 1
+    ? STATUS_LABELS[STATUS_FLOW[currentIdx + 1]]
+    : null;
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="app">
+        <div className="topbar">
+          <div className="brand">
+            orderly<span>hub</span>
+            <span className="tag">Admin</span>
+          </div>
+          <div className="meta">
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span className="live" />
+              WhatsApp Connected
+            </span>
+            <span>{orders.length} orders</span>
+          </div>
+        </div>
+
+        <div className="stats">
+          <div className="stat"><div className="sv">{stats.total}</div><div className="sl">Total</div></div>
+          <div className="stat"><div className="sv" style={{ color: "#E8590C" }}>{stats.new}</div><div className="sl">New</div></div>
+          <div className="stat"><div className="sv" style={{ color: "#2563EB" }}>{stats.active}</div><div className="sl">In Progress</div></div>
+          <div className="stat"><div className="sv" style={{ color: "#059669" }}>{stats.delivered}</div><div className="sl">Delivered</div></div>
+        </div>
+
+        <div className="main">
+          <div className="sb">
+            <div className="sb-search">
+              <input className="si" placeholder="Search orders..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <div className="flt">
+              {["all", ...STATUS_FLOW].map((f) => (
+                <button key={f} className={`fb ${filter === f ? "on" : ""}`} onClick={() => setFilter(f)}>
+                  {f === "all" ? "All" : STATUS_LABELS[f]}
+                </button>
+              ))}
+            </div>
+            <div className="ol">
+              {loading && <div className="loading">Loading orders...</div>}
+              {!loading && filtered.map((o) => (
+                <div key={o.id} className={`oi ${selected === o.id ? "sel" : ""}`} onClick={() => setSelected(o.id)}>
+                  <div className="oi-top">
+                    <span className="oi-id">{o.id}</span>
+                    <span className="oi-time">{ago(o.created_at)}</span>
+                  </div>
+                  <div className="oi-name">{o.customer}</div>
+                  <div className="oi-items">{o.items}</div>
+                  <span className="badge" style={{ background: STATUS_COLORS[o.status] + "20", color: STATUS_COLORS[o.status] }}>
+                    {STATUS_LABELS[o.status]}
+                  </span>
+                </div>
+              ))}
+              {!loading && filtered.length === 0 && <div className="empty">No orders match</div>}
+            </div>
+          </div>
+
+          <div className="det">
+            {!order ? (
+              <div className="det-empty">Select an order to view details</div>
+            ) : (
+              <>
+                <div className="dh">
+                  <span className="dh-t">{order.id}</span>
+                  <div>
+                    {nextStatus && (
+                      <button className="ab pri" onClick={advanceStatus}>▸ Mark as {nextStatus}</button>
+                    )}
+                  </div>
+                </div>
+                <div className="db">
+                  <div className="di">
+                    <div className="sec">
+                      <div className="stit">Status</div>
+                      <div className="sbar">
+                        {STATUS_FLOW.map((s, i) => (
+                          <div key={s} className={`ss ${i < currentIdx ? "done" : i === currentIdx ? "now" : ""}`} />
+                        ))}
+                      </div>
+                      <div className="slbl" style={{ color: STATUS_COLORS[order.status] }}>
+                        {STATUS_LABELS[order.status]}
+                      </div>
+                    </div>
+                    <div className="sec">
+                      <div className="stit">Customer</div>
+                      <div className="fld"><div className="fk">Name</div><div className="fv">{order.customer}</div></div>
+                      <div className="fld"><div className="fk">WhatsApp</div><div className="fv" style={{ color: "#25d366" }}>{order.phone}</div></div>
+                    </div>
+                    <div className="sec">
+                      <div className="stit">Order</div>
+                      <div className="fld"><div className="fk">Items</div><div className="fv">{order.items}</div></div>
+                      <div className="fld"><div className="fk">Address</div><div className="fv">{order.address}</div></div>
+                      {order.notes && <div className="fld"><div className="fk">Notes</div><div className="fv">{order.notes}</div></div>}
+                      <div className="fld"><div className="fk">Placed</div><div className="fv">{new Date(order.created_at).toLocaleString()}</div></div>
+                    </div>
+                  </div>
+                  <div className="ch">
+                    <div className="ch-h"><b>●</b> WhatsApp — {order.customer}</div>
+                    <div className="ch-m" ref={chatRef}>
+                      {(order.messages || []).map((m, i) => (
+                        <div key={i} className={`cm ${m.sender === "customer" ? "c" : m.sender === "team" ? "t" : "s"}`}>
+                          {m.text}
+                          <div className="cm-t">{fmtTime(m.created_at)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="ch-b">
+                      <input
+                        className="ci"
+                        placeholder="Reply to customer..."
+                        value={chatMsg}
+                        onChange={(e) => setChatMsg(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && sendMsg()}
+                      />
+                      <button className="cs" onClick={sendMsg}>Send</button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
