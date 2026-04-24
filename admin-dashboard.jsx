@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // CONFIGURE THESE before deploying
 // ═══════════════════════════════════════════════════════
 const CONFIG = {
-  API_URL: "", // e.g. "https://orderlyhub.vercel.app" — leave empty for same-origin
-  ADMIN_KEY: "change-this-to-something-secret", // Must match ADMIN_KEY in your .env
+  API_URL: "https://orderlyhub.vercel.app/", // e.g. "https://orderlyhub.vercel.app" — leave empty for same-origin
+  ADMIN_KEY: "Freetown-Barcelona!", // Must match ADMIN_KEY in your .env
 };
 
 const API = CONFIG.API_URL;
