@@ -1,11 +1,28 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OrderlyHub — Admin</title>
+<style>
+  html, body, #root { height: 100%; margin: 0; background: #0C0B09; }
+  .boot { color: #B0A99F; font-family: system-ui, sans-serif; padding: 24px; }
+</style>
+</head>
+<body>
 
-// ═══════════════════════════════════════════════════════
-// CONFIGURE THESE before deploying
-// ═══════════════════════════════════════════════════════
+<div id="root"><div class="boot">Loading admin dashboard...</div></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
 const CONFIG = {
-  API_URL: "", // e.g. "https://orderlyhub.vercel.app" — leave empty for same-origin
-  ADMIN_KEY: "Freetown-Barcelona!", // Must match ADMIN_KEY in your .env
+  API_URL: "",
+  ADMIN_KEY: "Freetown-Barcelona!",
 };
 
 const API = CONFIG.API_URL;
@@ -102,7 +119,7 @@ body,#root{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color
 @media(max-width:900px){.main{grid-template-columns:1fr}.db{grid-template-columns:1fr}.stats{flex-wrap:wrap}.stat{min-width:50%}}
 `;
 
-export default function AdminDashboard() {
+function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -111,7 +128,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const chatRef = useRef(null);
 
-  // ── Fetch orders ──
   const fetchOrders = useCallback(async () => {
     try {
       const res = await fetch(`${API}/api/orders`, { headers: HEADERS });
@@ -128,7 +144,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchOrders();
-    // Poll every 5s for updates (swap with Supabase Realtime for production)
     const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
@@ -161,7 +176,6 @@ export default function AdminDashboard() {
     if (idx >= STATUS_FLOW.length - 1) return;
     const next = STATUS_FLOW[idx + 1];
 
-    // Optimistic update
     setOrders((prev) =>
       prev.map((o) =>
         o.id !== order.id ? o : { ...o, status: next }
@@ -174,7 +188,7 @@ export default function AdminDashboard() {
       body: JSON.stringify({ id: order.id, status: next }),
     });
 
-    fetchOrders(); // Refresh to get system message
+    fetchOrders();
   };
 
   const sendMsg = async () => {
@@ -182,7 +196,6 @@ export default function AdminDashboard() {
     const text = chatMsg.trim();
     setChatMsg("");
 
-    // Optimistic update
     setOrders((prev) =>
       prev.map((o) =>
         o.id !== order.id
@@ -284,7 +297,7 @@ export default function AdminDashboard() {
                   <span className="dh-t">{order.id}</span>
                   <div>
                     {nextStatus && (
-                      <button className="ab pri" onClick={advanceStatus}>▸ Mark as {nextStatus}</button>
+                      <button className="ab pri" onClick={advanceStatus}>{"▸"} Mark as {nextStatus}</button>
                     )}
                   </div>
                 </div>
@@ -315,7 +328,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="ch">
-                    <div className="ch-h"><b>●</b> WhatsApp — {order.customer}</div>
+                    <div className="ch-h"><b>{"●"}</b> WhatsApp — {order.customer}</div>
                     <div className="ch-m" ref={chatRef}>
                       {(order.messages || []).map((m, i) => (
                         <div key={i} className={`cm ${m.sender === "customer" ? "c" : m.sender === "team" ? "t" : "s"}`}>
@@ -344,3 +357,10 @@ export default function AdminDashboard() {
     </>
   );
 }
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<AdminDashboard />);
+</script>
+
+</body>
+</html>
